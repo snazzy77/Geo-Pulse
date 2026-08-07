@@ -1,0 +1,15 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.cache/
+data/raw/*
+data/interim/*
+data/processed/*
+data/uploads/*
+# Ignore every generated analysis run, including ad-hoc output directories.
+artifacts/**
+!artifacts/**/
+!artifacts/**/.gitkeep

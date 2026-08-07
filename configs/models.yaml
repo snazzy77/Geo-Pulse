@@ -1,0 +1,16 @@
+target: price
+group_column: neighborhood
+minimum_rows: 20
+minimum_groups: 2
+minimum_rows_per_group: 2
+max_correction_attempts: 1
+morans_k_neighbors: 5
+morans_permutations: 199
+morans_alpha: 0.05
+fixed_effects:
+  - square_feet
+  - beds
+  - baths
+  - property_age
+  - dist_to_park_m
+

@@ -1,0 +1,13 @@
+amenity_types:
+  - park
+  - school
+  - transit
+density_radius_m: 1000
+required_housing_features:
+  - square_feet
+  - beds
+  - baths
+optional_housing_features:
+  - year_built
+  - lot_size
+

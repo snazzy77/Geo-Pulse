@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Geo-Pulse</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="pulse"></span>Geo-Pulse</div>
+    <a href="/docs" target="_blank" rel="noreferrer">API documentation</a>
+  </header>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">SPATIAL REAL-ESTATE INTELLIGENCE</p>
+      <h1>Ask a location question.<br>Get a tested answer.</h1>
+      <p>Upload property and amenity data. Geo-Pulse engineers spatial features, fits a mixed-effects model, checks residual clustering, and publishes an interactive map.</p>
+    </section>
+
+    <section class="workspace">
+      <form id="analysis-form" class="panel">
+        <div class="panel-heading">
+          <div><span class="step">01</span><h2>New analysis</h2></div>
+          <button id="demo-button" class="secondary" type="button">Run sample analysis</button>
+        </div>
+
+        <label for="question">Research question</label>
+        <textarea id="question" name="question" required>How does park distance affect home price?</textarea>
+
+        <div class="file-grid">
+          <label class="drop-zone" for="properties">
+            <span>Property data</span>
+            <small>CSV, JSON, JSONL, or Parquet</small>
+            <input id="properties" name="properties" type="file" required accept=".csv,.json,.jsonl,.parquet,.pq">
+            <strong id="properties-name">Choose file</strong>
+          </label>
+          <label class="drop-zone" for="amenities">
+            <span>Amenity data</span>
+            <small>CSV, JSON, JSONL, or Parquet</small>
+            <input id="amenities" name="amenities" type="file" required accept=".csv,.json,.jsonl,.parquet,.pq">
+            <strong id="amenities-name">Choose file</strong>
+          </label>
+        </div>
+
+        <details>
+          <summary>Advanced settings</summary>
+          <div class="advanced-grid">
+            <label>Target column<input name="target" value="price"></label>
+            <label>Grouping column<input name="group_column" value="neighborhood"></label>
+          </div>
+        </details>
+        <button class="primary" type="submit">Run Geo-Pulse analysis</button>
+      </form>
+
+      <aside class="panel status-panel">
+        <span class="step">02</span><h2>Pipeline status</h2>
+        <ol id="stages">
+          <li>Validate source data</li>
+          <li>Engineer spatial features</li>
+          <li>Fit mixed-effects model</li>
+          <li>Run Moran's I diagnostics</li>
+          <li>Publish map and report</li>
+        </ol>
+        <div id="status" class="status idle">Ready</div>
+        <p id="error" class="error" hidden></p>
+      </aside>
+    </section>
+
+    <section class="panel live-sources">
+      <div class="panel-heading">
+        <div><span class="step">LIVE</span><h2>Free public data pipeline</h2></div>
+        <span id="source-badges" class="source-badges">Checking configuration…</span>
+      </div>
+      <p>Download property listings from Kaggle, retrieve parks, schools, and transit from OpenStreetMap, then add ACS demographics from the U.S. Census Bureau.</p>
+      <div class="source-grid">
+        <label>Kaggle dataset<input id="kaggle-dataset" value="ericpierce/austinhousingprices"></label>
+        <label>Dataset file<input id="kaggle-filename" value="austinHousingData.csv"></label>
+        <label>ACS year<input id="census-year" type="number" min="2009" value="2024"></label>
+        <label>Maximum properties<input id="max-rows" type="number" min="20" max="5000" value="500"></label>
+      </div>
+      <p class="credential-note">Census currently requires a free <code>CENSUS_API_KEY</code>. Kaggle authentication is only required when the selected public dataset requires consent.</p>
+      <button id="external-button" class="primary" type="button">Run live free-data analysis</button>
+    </section>
+
+    <section id="results" class="results" hidden>
+      <div class="results-heading"><div><span class="step">03</span><h2>Analysis results</h2></div><span id="run-id"></span></div>
+      <p id="summary" class="summary"></p>
+      <div class="result-grid">
+        <article class="panel"><h3>Findings</h3><ul id="findings"></ul></article>
+        <article class="panel"><h3>Limitations</h3><ul id="limitations"></ul></article>
+      </div>
+      <div class="artifact-actions">
+        <a id="report-link" class="primary link-button" target="_blank" rel="noreferrer">Open full report</a>
+        <a id="map-link" class="secondary link-button" target="_blank" rel="noreferrer">Open map</a>
+        <a id="model-link" class="secondary link-button" target="_blank" rel="noreferrer">Model details</a>
+      </div>
+      <iframe id="map-frame" title="Geo-Pulse interactive result map"></iframe>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

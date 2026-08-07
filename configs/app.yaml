@@ -1,0 +1,7 @@
+environment: development
+data_dir: data
+artifact_dir: artifacts
+cache_dir: .cache
+random_seed: 42
+log_level: INFO
+

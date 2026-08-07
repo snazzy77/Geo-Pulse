@@ -1,0 +1,28 @@
+property_source: local
+amenity_source: local
+property_path: data/samples/properties.csv
+amenity_path: data/samples/amenities.csv
+boundary_path: null
+kaggle:
+  dataset: ericpierce/austinhousingprices
+  filename: austinHousingData.csv
+  max_rows: 500
+  column_mapping:
+    property_id: zpid
+    price: latestPrice
+    latitude: latitude
+    longitude: longitude
+    neighborhood: zipcode
+    postal_code: zipcode
+    square_feet: livingAreaSqFt
+    beds: numOfBedrooms
+    baths: numOfBathrooms
+    year_built: yearBuilt
+osm:
+  buffer_m: 1500
+  request_timeout_s: 180
+  max_bbox_area_km2: 5000
+census:
+  year: 2024
+  api_key_env: CENSUS_API_KEY
+  max_zip_codes: 100
