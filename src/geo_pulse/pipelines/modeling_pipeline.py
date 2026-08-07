@@ -12,8 +12,9 @@ def run_modeling_pipeline(
     group_column: str,
     fixed_effects: list[str],
     model_config: dict,
+    target_transform: str = "log",
 ) -> tuple[pd.DataFrame, FittedModel, ModelSummary]:
-    dataset, model_target = build_model_dataset(
+    dataset, model_target, resolved_transform = build_model_dataset(
         features,
         target,
         group_column,
@@ -21,8 +22,9 @@ def run_modeling_pipeline(
         int(model_config.get("minimum_rows", 20)),
         int(model_config.get("minimum_groups", 2)),
         int(model_config.get("minimum_rows_per_group", 2)),
+        target_transform,
     )
     fitted, predictions, summary = train_model(
-        dataset, model_target, target, group_column, fixed_effects
+        dataset, model_target, target, group_column, fixed_effects, resolved_transform
     )
     return predictions, fitted, summary

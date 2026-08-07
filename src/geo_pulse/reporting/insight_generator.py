@@ -5,6 +5,8 @@ from geo_pulse.schemas.models import DiagnosticSummary, ModelSummary
 
 def generate_findings(model: ModelSummary, diagnostic: DiagnosticSummary) -> list[str]:
     findings: list[str] = []
+    transform = str(model.extra.get("target_transform", "log"))
+    outcome = "the log-transformed target" if transform == "log" else "the target"
     for coefficient in model.coefficients:
         if (
             coefficient.name == "Intercept"
@@ -16,7 +18,7 @@ def generate_findings(model: ModelSummary, diagnostic: DiagnosticSummary) -> lis
             continue
         direction = "higher" if coefficient.estimate > 0 else "lower"
         findings.append(
-            f"{coefficient.name} is associated with {direction} log price "
+            f"{coefficient.name} is associated with {direction} {outcome} "
             f"(estimate {coefficient.estimate:.4g}, p={coefficient.p_value:.3g})."
         )
     findings.append(

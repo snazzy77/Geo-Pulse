@@ -1,0 +1,37 @@
+# Extend these aliases when a domain uses different terminology.
+aliases:
+  target:
+    - target
+    - price
+    - sale_price
+    - saleprice
+    - sold_price
+    - list_price
+    - listprice
+    - value
+    - rate
+    - count
+    - cases
+    - case_count
+    - disease_rate
+    - incidence_rate
+  latitude: [latitude, lat, y_coord, y_coordinate, ycoord]
+  longitude: [longitude, lon, lng, long, x_coord, x_coordinate, xcoord]
+  group:
+    - group_id
+    - group
+    - neighborhood
+    - neighbourhood
+    - zipcode
+    - zip_code
+    - postal_code
+    - zcta
+    - community_area
+    - district
+    - ward
+    - tract
+    - county
+    - region
+    - borough
+  id: [record_id, property_id, listing_id, parcel_id, case_number, id]
+  geometry: [geometry, geom, wkt, the_geom]

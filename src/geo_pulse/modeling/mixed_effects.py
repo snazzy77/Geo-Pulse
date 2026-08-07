@@ -23,6 +23,7 @@ class FittedModel:
     fixed_only_prediction: bool = False
     is_mixed: bool = True
     model_type: str = "MixedLM random intercept"
+    target_transform: str = "log"
 
 
 def _usable_random_covariance(result: object) -> bool:

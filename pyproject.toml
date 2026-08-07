@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "geo-pulse"
 version = "0.1.0"
-description = "Agent-orchestrated real-estate spatial analytics"
+description = "Agent-orchestrated, schema-adaptive spatial analytics"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -17,10 +17,12 @@ dependencies = [
   "osmnx>=2.1,<3",
   "pandas>=2.2,<3",
   "pydantic>=2.9,<3",
+  "pyproj>=3.6,<4",
   "python-multipart>=0.0.20,<1",
   "python-dotenv>=1.0,<2",
   "pyyaml>=6,<7",
   "scipy>=1.13,<2",
+  "shapely>=2,<3",
   "statsmodels>=0.14,<1",
   "typer>=0.12,<1",
   "uvicorn>=0.30,<1",

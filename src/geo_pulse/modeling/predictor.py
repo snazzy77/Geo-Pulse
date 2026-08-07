@@ -17,7 +17,10 @@ def add_predictions(data: pd.DataFrame, fitted: FittedModel, original_target: st
             "The random-effect covariance reached a zero boundary; predictions use fixed effects "
             "and neighborhood random effects are reported as zero."
         )
-    result["predicted_log_price"] = fitted_values
+    model_prediction = f"predicted_{fitted.target}"
+    result[model_prediction] = fitted_values
     result["residual"] = result[fitted.target].to_numpy(dtype=float) - fitted_values
-    result[f"predicted_{original_target}"] = np.exp(fitted_values)
+    result[f"predicted_{original_target}"] = (
+        np.exp(fitted_values) if fitted.target_transform == "log" else fitted_values
+    )
     return result

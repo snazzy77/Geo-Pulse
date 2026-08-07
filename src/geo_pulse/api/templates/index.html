@@ -83,6 +83,26 @@
       <button id="external-button" class="primary" type="button">Run live free-data analysis</button>
     </section>
 
+    <section class="panel live-sources">
+      <div class="panel-heading">
+        <div><span class="step">ANY</span><h2>Generic spatial dataset</h2></div>
+      </div>
+      <p>Upload any spatial table. Geo-Pulse can inspect its columns, suggest a schema mapping, convert coordinates to WGS84, select a local metric projection, and run the mixed-effects analysis.</p>
+      <label class="drop-zone" for="spatial-data">
+        <span>Spatial data</span>
+        <small>CSV, JSON, JSONL, Parquet, GeoJSON, or GeoPackage</small>
+        <input id="spatial-data" type="file" accept=".csv,.json,.jsonl,.parquet,.pq,.geojson,.gpkg">
+        <strong id="spatial-data-name">Choose file</strong>
+      </label>
+      <label for="schema-mapping">Schema mapping</label>
+      <textarea id="schema-mapping" placeholder="Inspect the dataset to generate a mapping, or leave empty for automatic inference."></textarea>
+      <div class="artifact-actions">
+        <button id="inspect-spatial-button" class="secondary" type="button">Inspect schema</button>
+        <button id="run-spatial-button" class="primary" type="button">Run spatial analysis</button>
+      </div>
+      <p id="schema-inspection" class="credential-note"></p>
+    </section>
+
     <section id="results" class="results" hidden>
       <div class="results-heading"><div><span class="step">03</span><h2>Analysis results</h2></div><span id="run-id"></span></div>
       <p id="summary" class="summary"></p>

@@ -9,6 +9,11 @@ for (const id of ["properties", "amenities"]) {
   });
 }
 
+document.querySelector("#spatial-data").addEventListener("change", (event) => {
+  document.querySelector("#spatial-data-name").textContent =
+    event.target.files[0]?.name || "Choose file";
+});
+
 function setStatus(text, state) {
   statusBox.textContent = text;
   statusBox.className = `status ${state}`;
@@ -90,6 +95,52 @@ document.querySelector("#external-button").addEventListener("click", () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+});
+
+document.querySelector("#inspect-spatial-button").addEventListener("click", async () => {
+  const file = document.querySelector("#spatial-data").files[0];
+  if (!file) {
+    setStatus("Choose a spatial dataset first", "failed");
+    return;
+  }
+  const body = new FormData();
+  body.append("data", file);
+  setStatus("Inspecting dataset schema…", "running");
+  try {
+    const response = await fetch("/datasets/inspect", { method: "POST", body });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || "Schema inspection failed");
+    if (payload.suggested_mapping) {
+      document.querySelector("#schema-mapping").value =
+        JSON.stringify(payload.suggested_mapping, null, 2);
+    }
+    const confidence = Object.entries(payload.confidence)
+      .map(([role, score]) => role + ": " + Math.round(score * 100) + "%")
+      .join(" · ");
+    document.querySelector("#schema-inspection").textContent =
+      payload.row_count + " rows · " + confidence +
+      (payload.warnings.length ? " · " + payload.warnings.join(" ") : "");
+    setStatus(payload.suggested_mapping ? "Schema mapping ready" : "Manual mapping required", "done");
+  } catch (error) {
+    setStatus("Schema inspection failed", "failed");
+    errorBox.textContent = error.message;
+    errorBox.hidden = false;
+  }
+});
+
+document.querySelector("#run-spatial-button").addEventListener("click", () => {
+  const file = document.querySelector("#spatial-data").files[0];
+  if (!file) {
+    setStatus("Choose a spatial dataset first", "failed");
+    return;
+  }
+  const body = new FormData();
+  body.append("question", document.querySelector("#question").value);
+  body.append("data", file);
+  body.append("target_transform", "auto");
+  const mapping = document.querySelector("#schema-mapping").value.trim();
+  if (mapping) body.append("column_mapping", mapping);
+  submit("/analyses/spatial-upload", { body });
 });
 
 refreshSourceStatus();

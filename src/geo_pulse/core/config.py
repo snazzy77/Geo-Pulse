@@ -23,6 +23,7 @@ class Settings:
     features: dict[str, Any] = field(default_factory=dict)
     models: dict[str, Any] = field(default_factory=dict)
     data_sources: dict[str, Any] = field(default_factory=dict)
+    schema: dict[str, Any] = field(default_factory=dict)
 
     def resolve(self, value: str | Path) -> Path:
         path = Path(value)
@@ -55,6 +56,7 @@ def load_settings(config_dir: str | Path = DEFAULT_CONFIG_DIR) -> Settings:
         features=_read_yaml(config_path / "features.yaml"),
         models=_read_yaml(config_path / "models.yaml"),
         data_sources=_read_yaml(config_path / "data_sources.yaml"),
+        schema=_read_yaml(config_path / "default_schema.yaml"),
     )
     settings.artifacts.mkdir(parents=True, exist_ok=True)
     settings.resolve(settings.cache_dir).mkdir(parents=True, exist_ok=True)

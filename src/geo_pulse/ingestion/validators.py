@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from geo_pulse.core.exceptions import DataValidationError
@@ -55,4 +56,29 @@ def validate_amenities(frame: pd.DataFrame) -> pd.DataFrame:
     ].reset_index(drop=True)
     if clean.empty:
         raise DataValidationError("No valid amenity rows remain after validation")
+    return clean
+
+
+def validate_spatial_records(frame: pd.DataFrame, fixed_effects: list[str]) -> pd.DataFrame:
+    required = {"record_id", "target", "latitude", "longitude", "group_id", *fixed_effects}
+    _require_columns(frame, required, "Spatial")
+    clean = frame.copy()
+    numeric = ["target", "latitude", "longitude", *fixed_effects]
+    for column in numeric:
+        clean[column] = pd.to_numeric(clean[column], errors="coerce")
+    clean["group_id"] = clean["group_id"].astype("string").str.strip()
+    clean = clean.dropna(subset=["record_id", "target", "latitude", "longitude", "group_id"])
+    clean = clean.drop_duplicates(subset=["record_id"], keep="last")
+    clean = clean[
+        clean["latitude"].between(-90, 90)
+        & clean["longitude"].between(-180, 180)
+        & np.isfinite(clean["target"])
+    ].reset_index(drop=True)
+    unusable = [column for column in fixed_effects if not clean[column].notna().any()]
+    if unusable:
+        raise DataValidationError(
+            "Fixed-effect columns contain no numeric values: " + ", ".join(unusable)
+        )
+    if clean.empty:
+        raise DataValidationError("No valid spatial rows remain after validation")
     return clean

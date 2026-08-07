@@ -6,7 +6,7 @@ from geo_pulse.visualization.tooltips import property_tooltip
 
 
 def add_property_layer(map_object: folium.Map, frame: pd.DataFrame, target: str) -> None:
-    group = folium.FeatureGroup(name="Properties", show=True)
+    group = folium.FeatureGroup(name="Spatial records", show=True)
     for _, row in frame.iterrows():
         folium.CircleMarker(
             location=[row["latitude"], row["longitude"]],

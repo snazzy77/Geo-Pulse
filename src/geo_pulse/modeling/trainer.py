@@ -17,8 +17,10 @@ def train_model(
     original_target: str,
     group_column: str,
     fixed_effects: list[str],
+    target_transform: str = "log",
 ) -> tuple[FittedModel, pd.DataFrame, ModelSummary]:
     fitted = fit_mixed_effects(data, model_target, group_column, fixed_effects)
+    fitted.target_transform = target_transform
     with warnings.catch_warnings(record=True) as captured:
         warnings.simplefilter("always")
         predictions = add_predictions(data, fitted, original_target)
@@ -45,7 +47,9 @@ def train_model(
                     "The random-effect covariance reached a zero boundary; predictions use fixed "
                     "effects and neighborhood random effects are reported as zero."
                 )
-    metrics = regression_metrics(predictions[model_target], predictions["predicted_log_price"])
+    metrics = regression_metrics(
+        predictions[model_target], predictions[f"predicted_{model_target}"]
+    )
     if fitted.is_mixed:
         fixed_parameters = fitted.result.fe_params
         standard_errors = fitted.result.bse_fe
@@ -82,6 +86,8 @@ def train_model(
             "aic": float(fitted.result.aic),
             "bic": float(fitted.result.bic),
             "fit_warnings": fitted.warnings,
+            "target_transform": target_transform,
+            "model_target": model_target,
         },
     )
     return fitted, predictions, summary

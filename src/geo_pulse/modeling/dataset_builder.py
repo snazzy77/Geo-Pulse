@@ -1,7 +1,7 @@
 import pandas as pd
 
 from geo_pulse.core.exceptions import ModelingError
-from geo_pulse.features.transformations import add_log_target, fill_numeric_medians
+from geo_pulse.features.transformations import add_model_target, fill_numeric_medians
 
 
 def build_model_dataset(
@@ -12,7 +12,8 @@ def build_model_dataset(
     minimum_rows: int = 20,
     minimum_groups: int = 2,
     minimum_rows_per_group: int = 2,
-) -> tuple[pd.DataFrame, str]:
+    target_transform: str = "log",
+) -> tuple[pd.DataFrame, str, str]:
     required = [target, group_column, "latitude", "longitude", *fixed_effects]
     missing = [column for column in required if column not in frame]
     if missing:
@@ -26,5 +27,5 @@ def build_model_dataset(
         raise ModelingError(f"Model requires at least {minimum_rows} valid rows; found {len(data)}")
     if data[group_column].nunique() < minimum_groups:
         raise ModelingError(f"Model requires at least {minimum_groups} geographic groups")
-    data, model_target = add_log_target(data, target)
-    return data, model_target
+    data, model_target, resolved_transform = add_model_target(data, target, target_transform)
+    return data, model_target, resolved_transform

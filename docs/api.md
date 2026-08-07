@@ -13,3 +13,18 @@ Run the service with `geo-pulse serve` or `uvicorn geo_pulse.api.app:app`. Inter
 - `GET /reports/{run_id}/map` serves the interactive map.
 
 The MVP executes analyses synchronously. A production deployment should move long-running work to a durable job queue while retaining the same run identifiers and state model.
+
+# Schema inspection
+
+`POST /datasets/inspect` accepts a multipart `data` upload and returns a suggested generic mapping, confidence scores, warnings, and a five-row preview.
+
+## Generic spatial analysis
+
+`POST /analyses/spatial-upload` accepts:
+
+- `question`: research question;
+- `data`: CSV, JSON, JSONL, Parquet, GeoJSON, or GeoPackage file;
+- `column_mapping`: optional JSON-encoded `DatasetColumnMapping`;
+- `target_transform`: `auto`, `log`, or `none`.
+
+When `column_mapping` is omitted, the agent inspection step attempts conservative automatic inference. Ambiguous datasets return HTTP 422 with guidance to provide an explicit mapping.

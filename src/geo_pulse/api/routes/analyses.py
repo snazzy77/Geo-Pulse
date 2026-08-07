@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from uuid import uuid4
 
@@ -9,13 +10,14 @@ from geo_pulse.api.dependencies import get_settings
 from geo_pulse.core.config import Settings
 from geo_pulse.pipelines.external_pipeline import run_external_analysis
 from geo_pulse.sample_data import generate_sample_data
+from geo_pulse.schemas.datasets import DatasetColumnMapping, TargetTransform
 from geo_pulse.schemas.external import ExternalAnalysisRequest
 from geo_pulse.schemas.reports import AnalysisResponse
-from geo_pulse.schemas.requests import AnalysisRequest
+from geo_pulse.schemas.requests import AnalysisRequest, SpatialAnalysisRequest
 from geo_pulse.storage.run_repository import RunRepository
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
-ALLOWED_UPLOAD_SUFFIXES = {".csv", ".json", ".jsonl", ".parquet", ".pq"}
+ALLOWED_UPLOAD_SUFFIXES = {".csv", ".json", ".jsonl", ".parquet", ".pq", ".geojson", ".gpkg"}
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 
@@ -68,6 +70,34 @@ async def create_uploaded_analysis(
         target=target,
         group_column=group_column,
     )
+    return await run_in_threadpool(execute, request, settings)
+
+
+@router.post("/spatial-upload", response_model=AnalysisResponse)
+async def create_spatial_upload_analysis(
+    question: str = Form(..., min_length=3, max_length=1000),
+    data: UploadFile = File(...),
+    column_mapping: str | None = Form(None),
+    target_transform: TargetTransform = Form("auto"),
+    settings: Settings = Depends(get_settings),
+) -> AnalysisResponse:
+    upload_dir = settings.resolve(settings.data_dir) / "uploads" / uuid4().hex
+    upload_dir.mkdir(parents=True, exist_ok=False)
+    data_path = await _save_upload(data, upload_dir, "spatial-data")
+    try:
+        mapping = (
+            DatasetColumnMapping.model_validate(json.loads(column_mapping))
+            if column_mapping
+            else None
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid column_mapping JSON: {exc}") from None
+    request = SpatialAnalysisRequest(
+        question=question,
+        data_path=data_path,
+        column_mapping=mapping,
+        target_transform=target_transform,
+    ).to_analysis_request()
     return await run_in_threadpool(execute, request, settings)
 
 

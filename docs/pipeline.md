@@ -515,4 +515,16 @@ A Geo-Pulse analysis is complete only when:
 - Required map and report artifacts were generated or their absence is explained.
 - The final response states limitations and does not imply causality from observational associations.
 - The run repository contains a terminal status and complete artifact manifest.
+# Generic schema-adaptive entry path
+
+Before the shared modeling stages, `analyze-spatial` performs:
+
+1. **Inspect** — load the table, examine names and value types, and score candidate semantic roles.
+2. **Map** — resolve an inferred or user-supplied `DatasetColumnMapping`.
+3. **Standardize** — produce `record_id`, `target`, `latitude`, `longitude`, `group_id`, and formula-safe numeric fixed effects.
+4. **Normalize CRS** — transform source coordinates or geometry into WGS84 and select a local UTM/azimuthal-equidistant metric CRS from the dataset center.
+5. **Validate** — remove invalid coordinates and duplicate IDs, verify numeric target/features, and enforce the model's row/group requirements.
+6. **Analyze** — reuse mixed-effects modeling, spatial correction, Moran's I diagnostics, mapping, and reporting.
+
+The generic path intentionally skips property-age and amenity-distance engineering. The existing housing and free-public-data paths retain those specialized stages.
 

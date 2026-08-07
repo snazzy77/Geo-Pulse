@@ -16,6 +16,12 @@ def load_table(path: str | Path) -> pd.DataFrame:
         return pd.read_parquet(source)
     if suffix in {".json", ".jsonl"}:
         return pd.read_json(source, lines=suffix == ".jsonl")
+    if suffix in {".geojson", ".gpkg"}:
+        try:
+            import geopandas as gpd
+        except ImportError as exc:
+            raise DataValidationError("Geospatial files require geopandas") from exc
+        return gpd.read_file(source)
     raise DataValidationError(f"Unsupported data format: {suffix}")
 
 

@@ -1,5 +1,7 @@
 from collections.abc import Callable
 
+from geo_pulse.tools.schema_tool import inspect_dataframe_schema_tool
+
 
 class ToolRegistry:
     def __init__(self) -> None:
@@ -15,3 +17,9 @@ class ToolRegistry:
 
     def names(self) -> list[str]:
         return sorted(self._tools)
+
+
+def default_tool_registry() -> ToolRegistry:
+    registry = ToolRegistry()
+    registry.register("inspect_dataframe_schema", inspect_dataframe_schema_tool)
+    return registry

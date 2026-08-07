@@ -79,3 +79,25 @@ def test_external_analysis_reports_missing_census_key(monkeypatch, test_settings
         assert "CENSUS_API_KEY" in response.json()["detail"]
     finally:
         app.dependency_overrides.clear()
+
+
+def test_schema_inspection_endpoint_suggests_mapping(tmp_path, test_settings):
+    test_settings.data_dir = tmp_path / "data"
+    app.dependency_overrides[get_settings] = lambda: test_settings
+    frame = (
+        "record_id,disease_rate,latitude,longitude,district,exposure\n"
+        "a,2.1,41.8,-87.7,north,4.0\n"
+        "b,2.4,41.9,-87.6,south,5.0\n"
+    )
+    try:
+        response = TestClient(app).post(
+            "/datasets/inspect",
+            files={"data": ("health.csv", frame.encode(), "text/csv")},
+        )
+        assert response.status_code == 200
+        mapping = response.json()["suggested_mapping"]
+        assert mapping["target_variable"] == "disease_rate"
+        assert mapping["group_col"] == "district"
+        assert mapping["fixed_features"] == ["exposure"]
+    finally:
+        app.dependency_overrides.clear()
