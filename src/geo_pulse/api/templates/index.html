@@ -3,107 +3,141 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta id="theme-color" name="theme-color" content="#010609">
   <title>Geo-Pulse</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    try {
+      const savedTheme = localStorage.getItem("geo-pulse-theme");
+      document.documentElement.dataset.theme = savedTheme === "villain" ? "villain" : "hero";
+    } catch {
+      document.documentElement.dataset.theme = "hero";
+    }
+  </script>
+  <link rel="stylesheet" href="/static/styles.css?v=20260815f">
 </head>
 <body>
   <header>
     <div class="brand"><span class="pulse"></span>Geo-Pulse</div>
-    <a href="/docs" target="_blank" rel="noreferrer">API documentation</a>
+    <div class="header-actions">
+      <button id="theme-toggle" class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Switch to Dark theme" title="Activate Dark theme">
+        <span class="theme-option hero-option">Light</span>
+        <span class="theme-track" aria-hidden="true"><span class="theme-core"></span></span>
+        <span class="theme-option villain-option">Dark</span>
+      </button>
+      <a href="/docs" target="_blank" rel="noreferrer">API documentation</a>
+    </div>
   </header>
   <main>
     <section class="hero">
-      <p class="eyebrow">SPATIAL REAL-ESTATE INTELLIGENCE</p>
-      <h1>Ask a location question.<br>Get a tested answer.</h1>
-      <p>Upload property and amenity data. Geo-Pulse engineers spatial features, fits a mixed-effects model, checks residual clustering, and publishes an interactive map.</p>
+      <p class="eyebrow">ENVIRONMENTAL HEALTH SURVEILLANCE</p>
+      <h1>Locate Exposure.<br>Prevent Spikes.</h1>
+      <p>An autonomous public health engine tracking the direct statistical relationship between localized industrial pollution and community health vulnerabilities.</p>
     </section>
 
     <section class="workspace">
-      <form id="analysis-form" class="panel">
+      <form id="surveillance-form" class="panel configuration-panel">
         <div class="panel-heading">
-          <div><span class="step">01</span><h2>New analysis</h2></div>
-          <button id="demo-button" class="secondary" type="button">Run sample analysis</button>
+          <div><span class="step">01</span><h2>Surveillance configuration</h2></div>
+          <span id="source-badges" class="source-badges">Checking live sources…</span>
         </div>
 
         <label for="question">Research question</label>
-        <textarea id="question" name="question" required>How does park distance affect home price?</textarea>
+        <textarea id="question" name="question" required>How does proximity to industrial factories affect local asthma spikes?</textarea>
 
-        <div class="file-grid">
-          <label class="drop-zone" for="properties">
-            <span>Property data</span>
-            <small>CSV, JSON, JSONL, or Parquet</small>
-            <input id="properties" name="properties" type="file" required accept=".csv,.json,.jsonl,.parquet,.pq">
-            <strong id="properties-name">Choose file</strong>
+        <fieldset class="mode-switch">
+          <legend>Ingestion mode</legend>
+          <label>
+            <input type="radio" name="analysis_mode" value="live" checked>
+            <span><strong>Live Federal Streaming</strong><small>CDC PLACES, Census &amp; OpenStreetMap</small></span>
           </label>
-          <label class="drop-zone" for="amenities">
-            <span>Amenity data</span>
-            <small>CSV, JSON, JSONL, or Parquet</small>
-            <input id="amenities" name="amenities" type="file" required accept=".csv,.json,.jsonl,.parquet,.pq">
-            <strong id="amenities-name">Choose file</strong>
+          <label>
+            <input type="radio" name="analysis_mode" value="custom">
+            <span><strong>Custom Dataset Upload</strong><small>Private CSV, GeoJSON or spatial files</small></span>
           </label>
-        </div>
+        </fieldset>
 
-        <details>
-          <summary>Advanced settings</summary>
-          <div class="advanced-grid">
-            <label>Target column<input name="target" value="price"></label>
-            <label>Grouping column<input name="group_column" value="neighborhood"></label>
+        <section id="live-mode-fields" class="mode-fields" aria-label="Live federal inputs">
+          <div class="ingestion-grid">
+            <label>Study place<input id="places-place" value="Seattle, Washington, USA" required></label>
+            <label>County FIPS code<input id="places-county-fips" value="53033" inputmode="numeric" maxlength="5" required></label>
+            <label>Target health condition
+              <select id="places-measure">
+                <option value="CASTHMA">Current asthma</option>
+                <option value="COPD">COPD</option>
+                <option value="CHD">Coronary heart disease</option>
+                <option value="DIABETES">Diagnosed diabetes</option>
+                <option value="DEPRESSION">Depression</option>
+              </select>
+            </label>
+            <label>Environmental hazard
+              <select id="places-hazard-type">
+                <option value="all">All industrial sources</option>
+                <option value="industrial_zone">Industrial zones</option>
+                <option value="factory">Factories and works</option>
+                <option value="refinery">Refineries</option>
+                <option value="power_plant">Power plants</option>
+              </select>
+            </label>
           </div>
-        </details>
-        <button class="primary" type="submit">Run Geo-Pulse analysis</button>
-      </form>
+          <p class="credential-note">CDC PLACES needs no API key at normal usage levels. Census uses your <code>CENSUS_API_KEY</code>; OpenStreetMap requires no key.</p>
+        </section>
 
+        <section id="custom-mode-fields" class="mode-fields" aria-label="Custom dataset inputs" hidden>
+          <div class="file-grid">
+            <label class="drop-zone" for="outcomes">
+              <span>Health outcome data</span>
+              <small>Case counts, admissions, or tract-level health metrics</small>
+              <input id="outcomes" name="outcomes" type="file" disabled accept=".csv,.json,.jsonl,.parquet,.pq,.geojson,.gpkg">
+              <strong id="outcomes-name">Choose health file</strong>
+            </label>
+            <label class="drop-zone" for="hazards">
+              <span>Pollution / environmental data</span>
+              <small>Industrial sites, pollution sources, or sensor locations</small>
+              <input id="hazards" name="hazards" type="file" disabled accept=".csv,.json,.jsonl,.parquet,.pq,.geojson,.gpkg">
+              <strong id="hazards-name">Choose pollution file</strong>
+            </label>
+          </div>
+          <label class="inline-option"><input id="include-current-air-quality" name="include_current_air_quality" type="checkbox" value="true" disabled> Add current PM2.5 and NO2 from Open-Meteo</label>
+        </section>
+
+        <details class="advanced-settings">
+          <summary>Advanced settings &amp; statistical controls</summary>
+          <div class="parameter-grid">
+            <label>Industrial buffer <span>meters</span><input id="buffer-m" name="buffer_m" type="number" min="100" max="25000" value="2000"></label>
+            <label id="hazard-limit-control" title="Used by live federal streaming">Maximum hazard features<input id="places-max-hazards" type="number" min="1" max="5000" value="1000"></label>
+            <label class="range-control" for="alert-threshold">
+              <span>Anomalous spike threshold</span>
+              <strong id="alert-threshold-value">2.0σ</strong>
+              <input id="alert-threshold" name="alert_threshold" type="range" min="1" max="4" step="0.1" value="2.0">
+            </label>
+          </div>
+          <fieldset class="control-set">
+            <legend>Demographic controls · socioeconomic fixed effects</legend>
+            <label><input name="demographic_controls" type="checkbox" value="median_household_income" checked> Median household income</label>
+            <label><input name="demographic_controls" type="checkbox" value="percent_below_poverty" checked> Percent below poverty line</label>
+            <label><input name="demographic_controls" type="checkbox" value="percent_age_65_plus" checked> Percent age 65+</label>
+          </fieldset>
+        </details>
+
+        <button id="run-surveillance-button" class="primary run-button" type="submit">Run Geo-Pulse Surveillance</button>
+      </form>
+    </section>
+
+    <section id="command-center" class="command-center">
       <aside class="panel status-panel">
         <span class="step">02</span><h2>Pipeline status</h2>
         <ol id="stages">
-          <li>Validate source data</li>
-          <li>Engineer spatial features</li>
-          <li>Fit mixed-effects model</li>
-          <li>Run Moran's I diagnostics</li>
-          <li>Publish map and report</li>
+          <li>Fetch CDC PLACES, Census tracts, and OSM hazards</li>
+          <li>Merge tract FIPS and build exposure buffers</li>
+          <li>Fit population-offset Poisson model</li>
+          <li>Detect spikes and run Moran's I</li>
+          <li>Publish surveillance map and policy memo</li>
         </ol>
         <div id="status" class="status idle">Ready</div>
         <p id="error" class="error" hidden></p>
       </aside>
-    </section>
 
-    <section class="panel live-sources">
-      <div class="panel-heading">
-        <div><span class="step">LIVE</span><h2>Free public data pipeline</h2></div>
-        <span id="source-badges" class="source-badges">Checking configuration…</span>
-      </div>
-      <p>Download property listings from Kaggle, retrieve parks, schools, and transit from OpenStreetMap, then add ACS demographics from the U.S. Census Bureau.</p>
-      <div class="source-grid">
-        <label>Kaggle dataset<input id="kaggle-dataset" value="ericpierce/austinhousingprices"></label>
-        <label>Dataset file<input id="kaggle-filename" value="austinHousingData.csv"></label>
-        <label>ACS year<input id="census-year" type="number" min="2009" value="2024"></label>
-        <label>Maximum properties<input id="max-rows" type="number" min="20" max="5000" value="500"></label>
-      </div>
-      <p class="credential-note">Census currently requires a free <code>CENSUS_API_KEY</code>. Kaggle authentication is only required when the selected public dataset requires consent.</p>
-      <button id="external-button" class="primary" type="button">Run live free-data analysis</button>
-    </section>
-
-    <section class="panel live-sources">
-      <div class="panel-heading">
-        <div><span class="step">ANY</span><h2>Generic spatial dataset</h2></div>
-      </div>
-      <p>Upload any spatial table. Geo-Pulse can inspect its columns, suggest a schema mapping, convert coordinates to WGS84, select a local metric projection, and run the mixed-effects analysis.</p>
-      <label class="drop-zone" for="spatial-data">
-        <span>Spatial data</span>
-        <small>CSV, JSON, JSONL, Parquet, GeoJSON, or GeoPackage</small>
-        <input id="spatial-data" type="file" accept=".csv,.json,.jsonl,.parquet,.pq,.geojson,.gpkg">
-        <strong id="spatial-data-name">Choose file</strong>
-      </label>
-      <label for="schema-mapping">Schema mapping</label>
-      <textarea id="schema-mapping" placeholder="Inspect the dataset to generate a mapping, or leave empty for automatic inference."></textarea>
-      <div class="artifact-actions">
-        <button id="inspect-spatial-button" class="secondary" type="button">Inspect schema</button>
-        <button id="run-spatial-button" class="primary" type="button">Run spatial analysis</button>
-      </div>
-      <p id="schema-inspection" class="credential-note"></p>
-    </section>
-
-    <section id="results" class="results" hidden>
+      <section id="results" class="results panel" hidden>
       <div class="results-heading"><div><span class="step">03</span><h2>Analysis results</h2></div><span id="run-id"></span></div>
       <p id="summary" class="summary"></p>
       <div class="result-grid">
@@ -114,10 +148,12 @@
         <a id="report-link" class="primary link-button" target="_blank" rel="noreferrer">Open full report</a>
         <a id="map-link" class="secondary link-button" target="_blank" rel="noreferrer">Open map</a>
         <a id="model-link" class="secondary link-button" target="_blank" rel="noreferrer">Model details</a>
+        <a id="matrix-link" class="secondary link-button" target="_blank" rel="noreferrer" hidden>Download merged matrix</a>
       </div>
       <iframe id="map-frame" title="Geo-Pulse interactive result map"></iframe>
+      </section>
     </section>
   </main>
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=20260815e"></script>
 </body>
 </html>

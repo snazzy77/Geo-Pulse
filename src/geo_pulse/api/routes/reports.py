@@ -14,6 +14,8 @@ def get_report_artifact(
     locations = {
         "report": settings.artifacts / "reports" / f"{run_id}.html",
         "map": settings.artifacts / "maps" / f"{run_id}.html",
+        "matrix": settings.artifacts / "datasets" / f"{run_id}-surveillance-matrix.csv",
+        "predictions": settings.artifacts / "diagnostics" / f"{run_id}-predictions.csv",
     }
     path = locations.get(artifact_type)
     if path is None or not path.exists():

@@ -6,7 +6,11 @@ import httpx
 import pandas as pd
 from shapely.geometry import Point
 
-from geo_pulse.ingestion.census_client import enrich_with_census
+from geo_pulse.ingestion.census_client import (
+    enrich_health_with_census,
+    enrich_with_census,
+    latest_available_acs5_year,
+)
 from geo_pulse.ingestion.kaggle_source import (
     _materialize_downloaded_file,
     normalize_kaggle_properties,
@@ -81,6 +85,49 @@ def test_census_errors_do_not_expose_api_key(tmp_path):
         raise AssertionError("Expected Census failure")
     assert secret not in message
     assert "HTTP 404" in message
+
+
+def test_latest_acs_year_is_discovered_and_health_controls_are_calculated(tmp_path):
+    def handler(request: httpx.Request) -> httpx.Response:
+        year = int(request.url.path.split("/")[2])
+        if year == 2026:
+            return httpx.Response(404)
+        requested = request.url.params["get"].split(",")
+        values = {
+            "NAME": "ZCTA5 98104",
+            "B01003_001E": "10000",
+            "B19013_001E": "85000",
+            "B17001_001E": "8000",
+            "B17001_002E": "1200",
+            "B01001_001E": "10000",
+            **{f"B01001_{index:03d}E": "100" for index in range(20, 26)},
+            **{f"B01001_{index:03d}E": "100" for index in range(44, 50)},
+        }
+        body = [
+            [*requested, "zip code tabulation area"],
+            [*(values[item] for item in requested), "98104"],
+        ]
+        return httpx.Response(
+            200, content=json.dumps(body), headers={"content-type": "application/json"}
+        )
+
+    transport = httpx.MockTransport(handler)
+    latest = latest_available_acs5_year(
+        api_key="test-key", transport=transport, start_year=2026
+    )
+    result, year = enrich_health_with_census(
+        pd.DataFrame({"zip_code": [98104]}),
+        ["median_household_income", "percent_below_poverty", "percent_age_65_plus"],
+        tmp_path,
+        api_key="test-key",
+        transport=transport,
+        year=latest,
+    )
+
+    assert year == 2025
+    assert result.loc[0, "census_median_household_income_10k"] == 8.5
+    assert result.loc[0, "census_percent_below_poverty"] == 15.0
+    assert result.loc[0, "census_percent_age_65_plus"] == 12.0
 
 
 def test_kaggle_zip_wrapped_csv_is_materialized(tmp_path):

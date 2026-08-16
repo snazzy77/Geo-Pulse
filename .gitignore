@@ -5,11 +5,15 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .cache/
+cache/
 data/raw/*
+data/external/*
 data/interim/*
 data/processed/*
 data/uploads/*
+data/samples/health/*
 # Ignore every generated analysis run, including ad-hoc output directories.
 artifacts/**
 !artifacts/**/
 !artifacts/**/.gitkeep
+!data/external/.gitkeep

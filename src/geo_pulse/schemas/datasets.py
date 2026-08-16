@@ -49,3 +49,4 @@ class SchemaInspection(BaseModel):
 
 
 TargetTransform = Literal["auto", "log", "none"]
+AnalysisKind = Literal["auto", "explore", "model"]

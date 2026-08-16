@@ -7,10 +7,13 @@ max_correction_attempts: 1
 morans_k_neighbors: 5
 morans_permutations: 199
 morans_alpha: 0.05
+health_family: poisson
+health_link: log
+industrial_buffer_m: 2000
+surveillance_alert_threshold: 2.0
 fixed_effects:
   - square_feet
   - beds
   - baths
   - property_age
   - dist_to_park_m
-

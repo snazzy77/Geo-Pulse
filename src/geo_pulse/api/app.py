@@ -9,7 +9,7 @@ from geo_pulse.api.routes import analyses, dashboard, datasets, health, models, 
 
 app = FastAPI(
     title="Geo-Pulse API",
-    description="Schema-adaptive spatial analytics with mixed-effects modeling and diagnostics",
+    description="General schema-adaptive exploratory and statistical spatial analytics",
     version=__version__,
 )
 STATIC_DIR = Path(__file__).resolve().parent / "static"

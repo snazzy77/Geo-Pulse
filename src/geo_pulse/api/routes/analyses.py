@@ -9,11 +9,20 @@ from geo_pulse.agent.orchestrator import execute
 from geo_pulse.api.dependencies import get_settings
 from geo_pulse.core.config import Settings
 from geo_pulse.pipelines.external_pipeline import run_external_analysis
-from geo_pulse.sample_data import generate_sample_data
-from geo_pulse.schemas.datasets import DatasetColumnMapping, TargetTransform
+from geo_pulse.pipelines.health_surveillance_pipeline import run_health_surveillance
+from geo_pulse.pipelines.places_surveillance_pipeline import run_places_surveillance
+from geo_pulse.pipelines.source_acquisition_pipeline import resolve_osm_dataset_path
+from geo_pulse.sample_data import generate_health_sample_data, generate_sample_data
+from geo_pulse.schemas.datasets import AnalysisKind, DatasetColumnMapping, TargetTransform
 from geo_pulse.schemas.external import ExternalAnalysisRequest
 from geo_pulse.schemas.reports import AnalysisResponse
-from geo_pulse.schemas.requests import AnalysisRequest, SpatialAnalysisRequest
+from geo_pulse.schemas.requests import (
+    AnalysisRequest,
+    HealthAnalysisRequest,
+    PlacesSurveillanceRequest,
+    SpatialAnalysisRequest,
+)
+from geo_pulse.schemas.sources import SpatialSourceAnalysisRequest
 from geo_pulse.storage.run_repository import RunRepository
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
@@ -79,6 +88,7 @@ async def create_spatial_upload_analysis(
     data: UploadFile = File(...),
     column_mapping: str | None = Form(None),
     target_transform: TargetTransform = Form("auto"),
+    analysis_kind: AnalysisKind = Form("auto"),
     settings: Settings = Depends(get_settings),
 ) -> AnalysisResponse:
     upload_dir = settings.resolve(settings.data_dir) / "uploads" / uuid4().hex
@@ -97,8 +107,71 @@ async def create_spatial_upload_analysis(
         data_path=data_path,
         column_mapping=mapping,
         target_transform=target_transform,
+        analysis_kind=analysis_kind,
     ).to_analysis_request()
     return await run_in_threadpool(execute, request, settings)
+
+
+@router.post("/spatial-source", response_model=AnalysisResponse)
+async def create_spatial_source_analysis(
+    source_request: SpatialSourceAnalysisRequest,
+    settings: Settings = Depends(get_settings),
+) -> AnalysisResponse:
+    data_path = resolve_osm_dataset_path(source_request.dataset_id, settings)
+    request = SpatialAnalysisRequest(
+        question=source_request.question,
+        data_path=data_path,
+        column_mapping=source_request.column_mapping,
+        target_transform=source_request.target_transform,
+        analysis_kind=source_request.analysis_kind,
+    ).to_analysis_request()
+    return await run_in_threadpool(execute, request, settings)
+
+
+@router.post("/health-upload", response_model=AnalysisResponse)
+async def create_health_surveillance_analysis(
+    question: str = Form(..., min_length=3, max_length=1000),
+    outcomes: UploadFile = File(...),
+    hazards: UploadFile | None = File(None),
+    hazard_dataset_id: str | None = Form(None),
+    column_mapping: str | None = Form(None),
+    buffer_m: float = Form(2000, ge=100, le=25_000),
+    alert_threshold: float = Form(2.0, ge=1.0, le=5.0),
+    demographic_controls: list[str] = Form([]),
+    include_current_air_quality: bool = Form(False),
+    settings: Settings = Depends(get_settings),
+) -> AnalysisResponse:
+    upload_dir = settings.resolve(settings.data_dir) / "uploads" / uuid4().hex
+    upload_dir.mkdir(parents=True, exist_ok=False)
+    outcome_path = await _save_upload(outcomes, upload_dir, "health-outcomes")
+    if hazards is not None and hazards.filename:
+        hazard_path = await _save_upload(hazards, upload_dir, "environmental-hazards")
+    elif hazard_dataset_id:
+        hazard_path = resolve_osm_dataset_path(hazard_dataset_id, settings)
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Upload environmental hazard data or fetch an industrial OSM dataset first",
+        )
+    try:
+        mapping = (
+            DatasetColumnMapping.model_validate(json.loads(column_mapping))
+            if column_mapping
+            else None
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid column_mapping JSON: {exc}") from None
+    request = HealthAnalysisRequest(
+        question=question,
+        outcome_path=outcome_path,
+        hazard_path=hazard_path,
+        column_mapping=mapping,
+        buffer_m=buffer_m,
+        alert_threshold=alert_threshold,
+        demographic_controls=demographic_controls,
+        include_current_air_quality=include_current_air_quality,
+    )
+    return await run_in_threadpool(run_health_surveillance, request, settings)
 
 
 @router.post("/demo", response_model=AnalysisResponse)
@@ -115,6 +188,33 @@ async def create_demo_analysis(
         amenity_path=amenity_path,
     )
     return await run_in_threadpool(execute, request, settings)
+
+
+@router.post("/health-demo", response_model=AnalysisResponse)
+async def create_health_demo_analysis(
+    question: str = "How does proximity to industrial factories affect local asthma spikes?",
+    settings: Settings = Depends(get_settings),
+) -> AnalysisResponse:
+    outcome_path, hazard_path = generate_health_sample_data(
+        settings.resolve(settings.data_dir) / "samples" / "health",
+        settings.random_seed,
+    )
+    request = HealthAnalysisRequest(
+        question=question,
+        outcome_path=outcome_path,
+        hazard_path=hazard_path,
+        buffer_m=float(settings.models.get("industrial_buffer_m", 2000)),
+    )
+    return await run_in_threadpool(run_health_surveillance, request, settings)
+
+
+@router.post("/places-live", response_model=AnalysisResponse)
+async def create_live_places_surveillance(
+    request: PlacesSurveillanceRequest,
+    settings: Settings = Depends(get_settings),
+) -> AnalysisResponse:
+    """Build a live tract matrix from CDC PLACES, Census, TIGERweb, and OSM."""
+    return await run_in_threadpool(run_places_surveillance, request, settings)
 
 
 @router.post("/external", response_model=AnalysisResponse)

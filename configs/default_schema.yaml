@@ -2,6 +2,15 @@
 aliases:
   target:
     - target
+    - target_y
+    - asthma_cases
+    - asthma_case_count
+    - respiratory_cases
+    - respiratory_admissions
+    - hospital_admissions
+    - emergency_visits
+    - case_count
+    - cases
     - price
     - sale_price
     - saleprice
@@ -11,8 +20,6 @@ aliases:
     - value
     - rate
     - count
-    - cases
-    - case_count
     - disease_rate
     - incidence_rate
   latitude: [latitude, lat, y_coord, y_coordinate, ycoord]
@@ -20,6 +27,10 @@ aliases:
   group:
     - group_id
     - group
+    - county_fips
+    - county
+    - census_tract
+    - tract_id
     - neighborhood
     - neighbourhood
     - zipcode

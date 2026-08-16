@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from geo_pulse.tools.schema_tool import inspect_dataframe_schema_tool
+from geo_pulse.tools.source_tool import fetch_openstreetmap_dataset_tool
 
 
 class ToolRegistry:
@@ -22,4 +23,5 @@ class ToolRegistry:
 def default_tool_registry() -> ToolRegistry:
     registry = ToolRegistry()
     registry.register("inspect_dataframe_schema", inspect_dataframe_schema_tool)
+    registry.register("fetch_openstreetmap_dataset", fetch_openstreetmap_dataset_tool)
     return registry

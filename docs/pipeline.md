@@ -1,8 +1,33 @@
 # Geo-Pulse Analysis Pipeline
 
+> **Current primary trajectory:** Geo-Pulse is an environmental-health and epidemiological surveillance system. Real-estate stages retained later in this document describe the legacy compatibility path.
+
+## Primary environmental-health pipeline
+
+The dashboard's live path runs:
+
+1. **CDC PLACES** — query one measure for every tract in the requested county.
+2. **Census** — discover the latest ACS 5-year release, fetch selected tract controls, and retrieve current TIGERweb polygons.
+3. **OpenStreetMap** — retrieve controlled industrial feature classes for the named place.
+4. **FIPS join and exposure** — join the federal sources on 11-digit tract FIPS, project locally, buffer OSM hazards, and count tract intersections.
+5. **Rate model** — derive estimated counts using the adult denominator and fit a population-offset Poisson GLM.
+6. **Surveillance** — calculate Pearson-residual alerts and Moran's I, then publish the merged matrix, provenance manifest, map, model, diagnostics, and policy memo.
+
+The upload path remains available for actual event counts and repeated geographic observations:
+
+1. **Inspect health schema** — map respiratory/asthma count fields to `target_y`, county/ZIP/tract fields to `group_id`, and retain numeric environmental and socioeconomic covariates.
+2. **Acquire hazards** — upload environmental sites or fetch industrial zones, factories, refineries, and power plants through the controlled OpenStreetMap catalog.
+3. **Engineer exposure** — select a local metric CRS, buffer hazards by 2 km by default, spatially join health locations or geographies, and calculate `industrial_exposure_score` plus nearest-site distance.
+4. **Optionally enrich air quality** — retrieve current PM2.5 and NO2 from Open-Meteo while explicitly recording the temporal-basis limitation.
+5. **Fit count model** — estimate a log-link Poisson GLMM with a geographic random intercept.
+6. **Run surveillance** — flag positive Pearson residuals of at least 2, assess overdispersion, and test residual Moran's I with permutations.
+7. **Interpret and publish** — calculate IRRs, rank positive-residual geographies, evaluate Moran's I and random effects, then write predictions, model and diagnostic manifests, an alert map, a structured epidemiologist report, agent Markdown/payload artifacts, and a policy memo.
+
+The health pipeline is observational decision support. It does not diagnose individuals or establish that an industrial site caused illness.
+
 ## Purpose
 
-This document is the operating blueprint for Geo-Pulse. It defines how a natural-language real-estate question becomes a reproducible spatial analysis, a validated statistical model, an interactive map, and an executive report.
+This document records the current epidemiology-first pipeline and the retained legacy workflows.
 
 Geo-Pulse follows one central rule: the AI agent may interpret, plan, coordinate, and explain, but all data transformations, geographic calculations, statistical estimates, diagnostic tests, and metrics must be produced by deterministic modules.
 
@@ -34,6 +59,28 @@ Diagnostic decision
                                       ↓
                          Map, report, and final response
 ```
+
+## Automated source-acquisition flow
+
+`pipelines/source_acquisition_pipeline.py` owns the no-key OSM dataset workflow:
+
+~~~text
+Place + controlled feature type
+    ↓
+Nominatim place-boundary lookup
+    ↓
+Projected area safety check
+    ↓
+Overpass feature query
+    ↓
+Geometry normalization to representative WGS84 points
+    ↓
+Deterministic row limiting
+    ↓
+Cached CSV + source manifest + download URL
+~~~
+
+`ingestion/osm_dataset.py` owns the controlled tag catalog and provider normalization. `schemas/sources.py` validates the request/response boundary. `api/routes/sources.py` and the `fetch-osm` CLI expose the workflow. `tools/source_tool.py` registers the operation for agent use.
 
 ## Pipeline-wide records
 
@@ -527,4 +574,3 @@ Before the shared modeling stages, `analyze-spatial` performs:
 6. **Analyze** — reuse mixed-effects modeling, spatial correction, Moran's I diagnostics, mapping, and reporting.
 
 The generic path intentionally skips property-age and amenity-distance engineering. The existing housing and free-public-data paths retain those specialized stages.
-

@@ -44,5 +44,5 @@ def auto_project_gdf(gdf: Any) -> Any:
         raise ValueError("Cannot project an empty GeoDataFrame")
     source = gdf if getattr(gdf, "crs", None) is not None else gdf.set_crs(4326)
     wgs84 = source.to_crs(4326)
-    center = wgs84.geometry.unary_union.centroid
+    center = wgs84.geometry.union_all().centroid
     return source.to_crs(select_local_projected_crs(center.y, center.x))

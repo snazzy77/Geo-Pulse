@@ -3,6 +3,15 @@ amenity_source: local
 property_path: data/samples/properties.csv
 amenity_path: data/samples/amenities.csv
 boundary_path: null
+health_kaggle:
+  dataset: epa/air-quality-index
+  filename: air_quality.csv
+  max_rows: 500
+  note: Configure a compatible public-health outcome dataset before enabling live ingestion.
+air_quality:
+  providers: [open_meteo, epa]
+  variables: [pm2_5, nitrogen_dioxide]
+  enabled: false
 kaggle:
   dataset: ericpierce/austinhousingprices
   filename: austinHousingData.csv
@@ -21,8 +30,20 @@ kaggle:
 osm:
   buffer_m: 1500
   request_timeout_s: 180
+  dataset_request_timeout_s: 30
   max_bbox_area_km2: 5000
+  max_place_area_km2: 2500
+  http_user_agent: Geo-Pulse/0.1 (local research application)
+  overpass_rate_limit: false
+  overpass_endpoints:
+    - https://overpass.private.coffee/api
+    - https://overpass-api.de/api
 census:
   year: 2024
   api_key_env: CENSUS_API_KEY
   max_zip_codes: 100
+cdc_places:
+  domain: https://data.cdc.gov
+  tract_dataset_id: cwsq-ngmh
+  release: 2025
+  app_token_env: CDC_SOCRATA_APP_TOKEN

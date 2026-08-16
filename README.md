@@ -1,69 +1,206 @@
 # Geo-Pulse
 
-Geo-Pulse is an executable, local-first, schema-adaptive spatial analytics service. It can run its original real-estate enrichment workflow or inspect and standardize an arbitrary spatial table before fitting a geographic random-intercept mixed-effects model, testing residual spatial autocorrelation with permutation-based Moran's I, and publishing an interactive map plus an HTML report.
+**Locate Exposure. Prevent Spikes.**
 
-## Quick start
+Geo-Pulse is a public-health surveillance dashboard that studies how nearby industrial
+pollution may relate to community health vulnerabilities. It combines free public data,
+spatial analysis, statistical modeling, and automated reporting in one local application.
 
-Requirements: Python 3.11 or later.
+## Mission
 
-```text
+Geo-Pulse's mission is to help public-health teams identify communities that may need
+closer investigation before health disparities become larger crises.
+
+The application turns complex geographic and statistical data into clear maps, findings,
+limitations, and practical surveillance recommendations. Geo-Pulse supports decision-making;
+it does not prove that an environmental source caused an illness or replace review by an
+epidemiologist.
+
+## What Geo-Pulse does
+
+Geo-Pulse can:
+
+- Download community health estimates from **CDC PLACES**.
+- Add demographic controls from the **U.S. Census Bureau**.
+- Locate industrial sites using **OpenStreetMap**.
+- Measure which communities are close to industrial hazards.
+- Fit a population-adjusted Poisson health model.
+- Detect unusual geographic health spikes and residual clustering.
+- Convert model coefficients into understandable rate ratios.
+- Generate an interactive map and a public-health report.
+- Analyze your own health and environmental files.
+
+## Quick start on Windows
+
+### 1. Open the project
+
+Open PowerShell and move into the Geo-Pulse folder:
+
+```powershell
+cd C:\Users\girid\Documents\Gokul_Projects\Gokul_Workspace\Geo-Pulse
+```
+
+### 2. Create and activate a virtual environment
+
+You only need to create it once:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+If you already created the environment, only run the second command.
+
+### 3. Install Geo-Pulse
+
+```powershell
 python -m pip install -e ".[dev]"
-python scripts/download_sample_data.py
-geo-pulse analyze --question "How does park distance affect home price?" --properties data/samples/properties.csv --amenities data/samples/amenities.csv
 ```
 
-Generated artifacts are written beneath `artifacts/`.
+Geo-Pulse requires Python 3.11 or newer. Check your version with:
 
-## Generic spatial workflow
+```powershell
+python --version
+```
 
-Use `analyze-spatial` for non-housing data or housing files with unfamiliar column names:
+### 4. Add your Census API key
 
-~~~text
-geo-pulse analyze-spatial --data data/health.csv --question "How is exposure associated with disease rate?"
-~~~
-
-Geo-Pulse first inspects the columns and suggests semantic roles for the target, coordinates or geometry, repeated geographic group, record identifier, and numeric fixed effects. Automatic inference is conservative: if a required role is ambiguous, provide an explicit mapping:
-
-~~~text
-geo-pulse analyze-spatial --data data/health.csv --target-column DiseaseRate --latitude-column Lat --longitude-column Lng --group-column CommunityArea --fixed-feature Pollution --fixed-feature Income --id-column CaseNumber --target-transform none
-~~~
-
-Projected X/Y sources are supported with `--source-crs`, and WKT/GeoJSON geometry can be selected with `--geometry-column`. The dashboard offers the same flow through **Generic spatial dataset → Inspect schema**. Schema aliases are configurable in `configs/default_schema.yaml`.
-
-Every generic run writes a schema manifest containing the source-to-canonical mapping, inference confidence, canonical fixed effects, WGS84 normalization, and automatically selected local metric CRS.
-
-## Free public data workflow
-
-Create a `.env` file from `.env.example`, request a free Census API key, and add it as `CENSUS_API_KEY`. Add `KAGGLE_API_TOKEN` only when the chosen public Kaggle dataset requires authentication or user consent.
+Copy `.env.example` to a new file named `.env`, then add your key:
 
 ```text
-geo-pulse analyze-free
+CENSUS_API_KEY=your_key_here
 ```
 
-The default live workflow downloads `ericpierce/austinhousingprices`, reads `austinHousingData.csv`, limits the analysis to 500 reproducibly sampled properties, retrieves parks, schools, and transit from OpenStreetMap through OSMnx, and joins 2024 ACS 5-year demographics by ZIP Code Tabulation Area.
+Do not commit `.env` to GitHub. CDC PLACES and OpenStreetMap do not require API keys for
+normal Geo-Pulse use.
 
-## API
+### 5. Start the dashboard
 
-```text
-geo-pulse serve
+```powershell
+geo-pulse dashboard
 ```
 
-The command opens the Geo-Pulse dashboard at `http://127.0.0.1:8000`. From the dashboard you can run the included demonstration immediately or upload property and amenity files. API documentation remains available at `/docs`, and service health is available at `/health`.
+Open <http://127.0.0.1:8000> if the browser does not open automatically. Stop the dashboard
+with `Ctrl+C` in PowerShell.
 
-## Input contracts
+## Run your first analysis
 
-The housing workflow expects `property_id`, `price`, `latitude`, `longitude`, `neighborhood`, `square_feet`, `beds`, and `baths`. `year_built` is optional.
+The dashboard starts in **Live Federal Streaming** mode.
 
-The generic workflow accepts CSV, JSON, JSONL, Parquet, GeoJSON, and GeoPackage sources. Its mapping requires a target, a repeated geographic group, at least one numeric fixed feature, and either latitude/longitude columns or a geometry column.
+1. Enter a research question.
+2. Enter a study place and its five-digit county FIPS code.
+3. Choose a health condition and environmental hazard type.
+4. Optionally open **Advanced settings** to adjust the exposure buffer, spike threshold,
+   and demographic controls.
+5. Select **Run Geo-Pulse Surveillance**.
+6. Review the findings, limitations, map, and full report.
 
-Amenity data must include `amenity_id`, `amenity_type`, `latitude`, and `longitude`. The default configuration recognizes `park`, `school`, and `transit`.
+The default example uses Seattle, Washington and King County FIPS `53033`.
 
-## Validation
+To analyze private data instead, select **Custom Dataset Upload** and provide:
 
-```text
-pytest
-ruff check src tests scripts
-ruff format --check src tests scripts
+- A health outcome file containing community health measurements.
+- A pollution or environmental file containing hazard locations.
+
+Supported spatial formats include CSV, JSON, JSONL, Parquet, GeoJSON, and GeoPackage.
+
+## Where results are saved
+
+Each run creates files under the `artifacts/` directory, including:
+
+- Interactive surveillance map
+- Full HTML and Markdown reports
+- Model summary and diagnostics
+- Merged surveillance data when available
+- Structured agent evidence for auditing
+
+You can open these files from the dashboard after an analysis finishes.
+
+## Useful command-line options
+
+Run the same Seattle analysis without the dashboard:
+
+```powershell
+geo-pulse analyze-places --place "Seattle, Washington, USA" --county-fips 53033 --measure-id CASTHMA
 ```
 
-See `docs/pipeline.md` for the stage-by-stage design, controls, and file ownership.
+Analyze your own health and hazard files:
+
+```powershell
+geo-pulse analyze-health --outcomes data\health_outcomes.csv --hazards data\industrial_sites.csv --question "How does industrial exposure relate to asthma spikes?"
+```
+
+Explore any dataset containing coordinates or point geometry:
+
+```powershell
+geo-pulse analyze-spatial --data data\locations.csv --question "Where are records clustered?" --analysis-kind explore
+```
+
+See every available command:
+
+```powershell
+geo-pulse --help
+```
+
+## Run the tests
+
+Run the complete test suite:
+
+```powershell
+python -m pytest
+```
+
+Run only the dashboard tests:
+
+```powershell
+python -m pytest tests\integration\test_api.py -q
+```
+
+Check code quality:
+
+```powershell
+python -m ruff check src tests
+```
+
+## Data sources
+
+| Source | Purpose | API key required? |
+|---|---|---:|
+| CDC PLACES | Modeled community health prevalence | No |
+| U.S. Census ACS | Population and demographic controls | Yes |
+| Census TIGERweb | Census tract boundaries | No |
+| OpenStreetMap | Industrial and environmental locations | No |
+
+CDC PLACES values are modeled small-area prevalence estimates, not individual patient
+records. OpenStreetMap buffer counts represent proximity, not measured pollution exposure.
+These limitations are included in generated reports.
+
+## Troubleshooting
+
+**`geo-pulse` is not recognized**
+
+Activate the virtual environment and reinstall the project:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+```
+
+**The dashboard still shows an older design**
+
+Restart the dashboard and press `Ctrl+F5` in the browser.
+
+**Live data cannot be downloaded**
+
+Confirm that you have an internet connection and that `CENSUS_API_KEY` is present in `.env`.
+Public services may occasionally rate-limit requests; wait briefly and try again.
+
+## More documentation
+
+- [Pipeline and file responsibilities](docs/pipeline.md)
+- [Modeling methodology](docs/modeling_methodology.md)
+- [API guide](docs/api.md)
+- [Data dictionary](docs/data_dictionary.md)
+
+API documentation is also available at <http://127.0.0.1:8000/docs> while the dashboard is
+running.

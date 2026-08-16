@@ -19,6 +19,13 @@ from geo_pulse.schemas.datasets import DatasetColumnMapping, SchemaInspection
 ROLE_CANDIDATES: dict[str, tuple[str, ...]] = {
     "target": (
         "target",
+        "target_y",
+        "asthma_cases",
+        "asthma_case_count",
+        "respiratory_cases",
+        "respiratory_admissions",
+        "hospital_admissions",
+        "emergency_visits",
         "price",
         "sale_price",
         "saleprice",
@@ -46,6 +53,10 @@ ROLE_CANDIDATES: dict[str, tuple[str, ...]] = {
     "group": (
         "group_id",
         "group",
+        "county_fips",
+        "county",
+        "census_tract",
+        "tract_id",
         "neighborhood",
         "neighbourhood",
         "zipcode",
@@ -192,6 +203,55 @@ def inspect_dataframe_schema(
         confidence=confidence,
         warnings=warnings,
     )
+
+
+def standardize_spatial_locations(
+    frame: pd.DataFrame, aliases: dict[str, list[str]] | None = None
+) -> tuple[pd.DataFrame, dict[str, str | None]]:
+    """Normalize a coordinate-only table for exploratory spatial analysis."""
+    if frame.empty:
+        raise DataValidationError("Cannot analyze an empty spatial dataset")
+    latitude, _ = _match_column(frame.columns, "latitude", aliases)
+    longitude, _ = _match_column(frame.columns, "longitude", aliases)
+    geometry, _ = _match_column(frame.columns, "geometry", aliases)
+    identifier, _ = _match_column(frame.columns, "id", aliases)
+    try:
+        if latitude and longitude:
+            normalized_latitude = pd.to_numeric(frame[latitude], errors="coerce")
+            normalized_longitude = pd.to_numeric(frame[longitude], errors="coerce")
+        elif geometry:
+            geometries = frame[geometry].map(_geometry_value)
+            normalized_latitude = geometries.map(lambda item: item.y)
+            normalized_longitude = geometries.map(lambda item: item.x)
+        else:
+            raise DataValidationError(
+                "Geo-Pulse could not find latitude/longitude or a geometry column."
+            )
+    except (GEOSException, TypeError, ValueError) as exc:
+        raise DataValidationError(f"Could not normalize spatial locations: {exc}") from None
+    normalized = frame.copy()
+    normalized["latitude"] = normalized_latitude
+    normalized["longitude"] = normalized_longitude
+    if "record_id" not in normalized:
+        normalized["record_id"] = (
+            frame[identifier].astype(str)
+            if identifier
+            else [f"record-{index + 1}" for index in range(len(frame))]
+        )
+    normalized = normalized[
+        normalized["latitude"].between(-90, 90)
+        & normalized["longitude"].between(-180, 180)
+        & np.isfinite(normalized["latitude"])
+        & np.isfinite(normalized["longitude"])
+    ].drop_duplicates("record_id")
+    if normalized.empty:
+        raise DataValidationError("No valid WGS84 coordinate records remain after normalization")
+    return normalized.reset_index(drop=True), {
+        "latitude": latitude,
+        "longitude": longitude,
+        "geometry": geometry,
+        "identifier": identifier,
+    }
 
 
 def _geometry_value(value: object) -> BaseGeometry:

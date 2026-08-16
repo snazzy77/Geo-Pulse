@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from geo_pulse.gis.distance_calculator import nearest_distance_m
+from geo_pulse.gis.distance_calculator import nearest_distance_m, pairwise_haversine_m
 
 
 def generate_sample_data(output_dir: str | Path, seed: int = 42) -> tuple[Path, Path]:
@@ -73,3 +73,68 @@ def generate_sample_data(output_dir: str | Path, seed: int = 42) -> tuple[Path, 
     properties.to_csv(property_path, index=False)
     amenities.to_csv(amenity_path, index=False)
     return property_path, amenity_path
+
+
+def generate_health_sample_data(output_dir: str | Path, seed: int = 42) -> tuple[Path, Path]:
+    """Create deterministic tract-like respiratory counts and industrial hazard locations."""
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(seed)
+    counties = {
+        "King-North": (47.68, -122.33, 0.10, "98103"),
+        "King-Central": (47.61, -122.33, 0.20, "98104"),
+        "King-South": (47.53, -122.29, 0.35, "98108"),
+        "Pierce-North": (47.36, -122.25, 0.25, "98001"),
+    }
+    hazard_rows: list[dict[str, object]] = []
+    for index, (latitude, longitude) in enumerate(
+        [(47.604, -122.321), (47.595, -122.310), (47.525, -122.285),
+         (47.515, -122.275), (47.365, -122.245), (47.350, -122.260)],
+        start=1,
+    ):
+        hazard_rows.append(
+            {
+                "record_id": f"industrial-{index:02d}",
+                "feature_type": "factory" if index % 2 else "power_plant",
+                "name": f"Industrial site {index}",
+                "latitude": latitude,
+                "longitude": longitude,
+            }
+        )
+    hazards = pd.DataFrame(hazard_rows)
+    outcome_rows: list[dict[str, object]] = []
+    for county, (latitude, longitude, deprivation_shift, postal_code) in counties.items():
+        for index in range(15):
+            outcome_rows.append(
+                {
+                    "record_id": f"tract-{county.lower()}-{index + 1:02d}",
+                    "county": county,
+                    "postal_code": postal_code,
+                    "latitude": latitude + rng.normal(0, 0.018),
+                    "longitude": longitude + rng.normal(0, 0.018),
+                    "pm2_5": float(np.clip(rng.normal(9.5 + deprivation_shift * 5, 1.2), 4, 20)),
+                    "deprivation_index": float(
+                        np.clip(rng.normal(0.35 + deprivation_shift, 0.12), 0, 1)
+                    ),
+                    "population_thousands": float(np.clip(rng.normal(4.5, 0.7), 2, 7)),
+                }
+            )
+    outcomes = pd.DataFrame(outcome_rows)
+    distances = pairwise_haversine_m(
+        outcomes[["latitude", "longitude"]].to_numpy(),
+        hazards[["latitude", "longitude"]].to_numpy(),
+    )
+    exposure = (distances <= 2000).sum(axis=1)
+    log_rate = (
+        0.8
+        + 0.24 * exposure
+        + 0.045 * outcomes["pm2_5"]
+        + 0.65 * outcomes["deprivation_index"]
+        + 0.10 * outcomes["population_thousands"]
+    )
+    outcomes.insert(1, "asthma_cases", rng.poisson(np.exp(log_rate)).astype(int))
+    outcome_path = output / "health_outcomes.csv"
+    hazard_path = output / "industrial_hazards.csv"
+    outcomes.to_csv(outcome_path, index=False)
+    hazards.to_csv(hazard_path, index=False)
+    return outcome_path, hazard_path

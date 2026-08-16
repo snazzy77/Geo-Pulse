@@ -7,6 +7,7 @@ from geo_pulse.api.dependencies import get_settings
 from geo_pulse.core.config import Settings
 from geo_pulse.ingestion.property_loader import load_table
 from geo_pulse.ingestion.schema_mapper import inspect_dataframe_schema
+from geo_pulse.pipelines.source_acquisition_pipeline import resolve_osm_dataset_path
 from geo_pulse.schemas.datasets import SchemaInspection
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
@@ -48,3 +49,11 @@ async def inspect_dataset(
         return inspect_dataframe_schema(load_table(target), settings.schema.get("aliases"))
     finally:
         await data.close()
+
+
+@router.get("/osm/{dataset_id}/inspect", response_model=SchemaInspection)
+def inspect_osm_dataset(
+    dataset_id: str, settings: Settings = Depends(get_settings)
+) -> SchemaInspection:
+    path = resolve_osm_dataset_path(dataset_id, settings)
+    return inspect_dataframe_schema(load_table(path), settings.schema.get("aliases"))

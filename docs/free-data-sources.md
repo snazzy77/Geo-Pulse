@@ -10,6 +10,23 @@ Other Kaggle datasets can be selected through the dashboard, CLI, or `ExternalAn
 
 OSMnx queries Overpass for parks, schools, and transit inside the buffered property bounding box. Geo-Pulse refuses extents larger than the configured area limit so an accidentally nationwide Kaggle dataset cannot trigger an unreasonable Overpass query. OSM results are cached locally.
 
+### Automatic place datasets
+
+`geo-pulse fetch-osm` and `POST /sources/osm/datasets` retrieve a controlled feature class within a named city, borough, or district. Supported classes are published by `geo-pulse source-catalog` and `GET /sources/catalog`.
+
+The acquisition sequence is:
+
+1. Resolve the named place to one OSM boundary.
+2. Project the boundary and reject areas above `osm.max_place_area_km2`.
+3. Query Overpass with an allow-listed tag set.
+4. Convert points, lines, and polygons to representative WGS84 coordinates.
+5. Reproducibly sample results above the requested row limit.
+6. Save CSV and source-manifest files under `data/external/osm/`.
+
+The public OSM services are shared community infrastructure. Requests are synchronous and may be slow or temporarily unavailable. Geo-Pulse identifies itself through a configured User-Agent, avoids autocomplete/systematic geocoding, limits query areas, and caches successful responses. Display `© OpenStreetMap contributors` and retain the OpenStreetMap license link when publishing derived results.
+
+OSM place datasets generally contain locations and tags, not a ready-made statistical outcome. Treat them as map/reference or amenity data unless a valid numeric target and analysis design are supplied.
+
 ## Census demographics
 
 Geo-Pulse calls the configured ACS 5-year API vintage for each unique ZIP Code Tabulation Area. It retrieves population, median household income, and median home value, then creates numerically scaled model features.
